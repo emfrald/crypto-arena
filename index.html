@@ -1,0 +1,915 @@
+<title>Evolution Arena</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="360"><!-- self-reload every 6 min to pull the latest push -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#f4f6fb; --surface:#ffffff; --surface-2:#eef1f8; --line:#dde2ee;
+  --ink:#141a2e; --muted:#5b6480; --faint:#8b93ab;
+  --gold:#c98a00; --gold-bright:#f5b544;
+  --momentum:#e5533f; --credit:#12a594; --reversion:#7159d6; --condor:#2b7fc4; --straddle:#c0398a;
+  --breakout:#2f9e7f; --ma_cross:#2f6fe0; --rsi:#c24d74; --volatility:#c47f16; --regime:#5a6b7d;
+  --pos:#1a9d6b; --neg:#d64653;
+  --shadow:0 1px 2px rgba(20,26,46,.06),0 8px 24px rgba(20,26,46,.06);
+  --radius:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0b0f1c; --surface:#141a2c; --surface-2:#1b2236; --line:#2a3350;
+  --ink:#e8ebf6; --muted:#98a1c0; --faint:#6b7597;
+  --gold:#f5b544; --gold-bright:#ffca5f;
+  --momentum:#ff6b5e; --credit:#2dd4bf; --reversion:#9d8bff; --condor:#4aa3f0; --straddle:#f07cc0;
+  --breakout:#3fcf9e; --ma_cross:#5b9bff; --rsi:#f07ca0; --volatility:#f0b64a; --regime:#a7b4c2;
+  --pos:#3fcf8e; --neg:#f26d78;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --ground:#0b0f1c; --surface:#141a2c; --surface-2:#1b2236; --line:#2a3350;
+  --ink:#e8ebf6; --muted:#98a1c0; --faint:#6b7597;
+  --gold:#f5b544; --gold-bright:#ffca5f;
+  --momentum:#ff6b5e; --credit:#2dd4bf; --reversion:#9d8bff; --condor:#4aa3f0; --straddle:#f07cc0;
+  --breakout:#3fcf9e; --ma_cross:#5b9bff; --rsi:#f07ca0; --volatility:#f0b64a; --regime:#a7b4c2;
+  --pos:#3fcf8e; --neg:#f26d78;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,sans-serif; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:clamp(20px,4vw,52px) clamp(16px,4vw,40px) 72px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:"Archivo",sans-serif; text-wrap:balance; margin:0}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--gold); font-weight:600}
+.pos{color:var(--pos)} .neg{color:var(--neg)}
+
+/* ---- header ---- */
+header{display:flex; flex-wrap:wrap; gap:28px; justify-content:space-between;
+  align-items:flex-end; border-bottom:1px solid var(--line); padding-bottom:26px}
+header h1{font-size:clamp(34px,6vw,60px); font-weight:900; letter-spacing:-.02em; line-height:.98}
+header .sub{color:var(--muted); margin-top:10px; max-width:52ch; font-size:15px}
+.clock{text-align:right; min-width:210px}
+.clock .lab{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--faint)}
+.clock .big{font-family:"Archivo",sans-serif; font-weight:800; font-size:34px; color:var(--gold);
+  line-height:1.1; margin-top:2px}
+.clock .meta{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); margin-top:4px}
+
+/* ---- kpi row ---- */
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin:26px 0 34px}
+.kpi{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px 18px 16px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+.kpi .k{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.01em}
+.kpi .v{font-family:"Archivo",sans-serif; font-weight:800; font-size:29px; letter-spacing:-.01em; margin-top:8px}
+.kpi .d{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--muted); margin-top:3px}
+.kpi.hero{background:linear-gradient(180deg,var(--surface),var(--surface-2))}
+.kpi.hero .v{color:var(--gold)}
+.kpi .rail{position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--gold)}
+
+/* ---- section frame ---- */
+section{margin-top:40px}
+.head{display:flex; align-items:baseline; gap:14px; margin-bottom:16px; flex-wrap:wrap}
+.head h2{font-size:22px; font-weight:800; letter-spacing:-.01em}
+.head .note{color:var(--faint); font-size:13px; font-family:"IBM Plex Mono",monospace}
+
+/* ---- family duel ---- */
+.duel{display:flex; flex-direction:column; gap:18px}
+.teams{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:18px; align-items:stretch}
+.compare{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.team{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:20px; box-shadow:var(--shadow); border-top:3px solid var(--tc)}
+.team.mom{--tc:var(--momentum)} .team.cred{--tc:var(--credit)}
+.team .name{font-family:"Archivo",sans-serif; font-weight:800; font-size:19px; display:flex;
+  align-items:center; gap:9px}
+.team .dot{width:11px; height:11px; border-radius:50%; background:var(--tc)}
+.team .tag{font-size:12.5px; color:var(--muted); margin-top:2px}
+.team .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-top:16px}
+.team .cell .cl{font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:.08em}
+.team .cell .cv{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:18px; margin-top:2px}
+.vs{align-self:center; font-family:"Archivo",sans-serif; font-weight:900; color:var(--faint);
+  font-size:20px; letter-spacing:.05em}
+.duelbar{margin-top:16px}
+.duelbar .lab{font-size:11.5px; color:var(--muted); display:flex; justify-content:space-between; margin-bottom:6px}
+.track{height:9px; border-radius:6px; background:var(--surface-2); overflow:hidden; display:flex}
+.track i{display:block; height:100%}
+
+/* ---- by-coin ---- */
+.coins{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px}
+.coincard{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px 16px; box-shadow:var(--shadow)}
+.coincard .sym{font-family:"Archivo",sans-serif; font-weight:800; font-size:16px}
+.coincard .crow{display:flex; justify-content:space-between; font-family:"IBM Plex Mono",monospace;
+  font-size:12.5px; margin-top:6px; color:var(--muted)}
+.coincard .crow b{color:var(--ink); font-weight:600}
+.coincard .empty{color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:13px}
+
+/* ---- panels ---- */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow:hidden}
+
+/* ---- standings table ---- */
+.tablescroll{overflow-x:auto}
+table{border-collapse:collapse; width:100%; min-width:720px}
+thead th{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--faint); font-weight:600; text-align:right;
+  padding:14px 14px 12px; border-bottom:1px solid var(--line); white-space:nowrap}
+thead th.l{text-align:left}
+tbody td{padding:11px 14px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+td.l{text-align:left}
+.rank{color:var(--faint); font-family:"IBM Plex Mono",monospace; width:34px}
+.rank.top{color:var(--gold); font-weight:700}
+.bot{font-weight:600; display:flex; align-items:center; gap:8px}
+.stage{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--gold); font-weight:700}
+.chip{font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600; padding:2px 8px;
+  border-radius:20px; text-transform:uppercase; letter-spacing:.04em; display:inline-block}
+.chip.mom{color:var(--momentum); background:color-mix(in srgb,var(--momentum) 15%,transparent)}
+.chip.cred{color:var(--credit); background:color-mix(in srgb,var(--credit) 15%,transparent)}
+.chip.rev{color:var(--reversion); background:color-mix(in srgb,var(--reversion) 16%,transparent)}
+.chip.ic{color:var(--condor); background:color-mix(in srgb,var(--condor) 16%,transparent)}
+.chip.str{color:var(--straddle); background:color-mix(in srgb,var(--straddle) 16%,transparent)}
+.chip.brk{color:var(--breakout); background:color-mix(in srgb,var(--breakout) 16%,transparent)}
+.chip.mac{color:var(--ma_cross); background:color-mix(in srgb,var(--ma_cross) 16%,transparent)}
+.chip.rsi{color:var(--rsi); background:color-mix(in srgb,var(--rsi) 16%,transparent)}
+.chip.vol{color:var(--volatility); background:color-mix(in srgb,var(--volatility) 16%,transparent)}
+.chip.reg{color:var(--regime); background:color-mix(in srgb,var(--regime) 16%,transparent)}
+.pill{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; padding:2px 8px;
+  border-radius:20px; letter-spacing:.05em; text-transform:uppercase}
+.pill.lead{color:#3a2a00; background:var(--gold-bright)}
+.pill.low{color:var(--neg); background:color-mix(in srgb,var(--neg) 16%,transparent)}
+.pill.idle{color:var(--faint); background:var(--surface-2); border:1px solid var(--line)}
+.plbar-wrap{display:flex; align-items:center; gap:9px; justify-content:flex-end}
+.plbar{width:74px; height:8px; border-radius:5px; background:var(--surface-2); position:relative; overflow:hidden}
+.plbar i{position:absolute; top:0; bottom:0; right:50%; border-radius:5px}
+
+/* ---- pl chart ---- */
+.chart{padding:20px 22px 8px}
+.crow{display:grid; grid-template-columns:120px 1fr 96px; gap:12px; align-items:center; margin-bottom:9px}
+.crow .cn{font-size:13px; color:var(--muted); text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cbar{position:relative; height:20px}
+.cbar .zero{position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--line)}
+.cbar i{position:absolute; top:2px; height:16px; border-radius:4px}
+.crow .cv{font-family:"IBM Plex Mono",monospace; font-size:13px; text-align:left; font-weight:500}
+.chart .axis{grid-template-columns:120px 1fr 96px; display:grid; gap:12px; margin-top:4px}
+.chart .axis span{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint); text-align:center}
+
+/* ---- insights ---- */
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:16px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:20px; box-shadow:var(--shadow); border-left:3px solid var(--ac,var(--gold))}
+.card .ic{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ac,var(--gold)); font-weight:600}
+.card h3{font-size:16.5px; font-weight:700; margin:8px 0 8px; letter-spacing:-.005em}
+.card p{margin:0; color:var(--muted); font-size:14px}
+.card p .hl{color:var(--ink); font-weight:600; font-family:"IBM Plex Mono",monospace}
+.card .gg{margin-top:12px; display:flex; flex-direction:column; gap:7px}
+.gline{display:grid; grid-template-columns:1fr auto; gap:8px; font-size:12.5px; align-items:center}
+.gline .gname{color:var(--muted)}
+.gline .gval{font-family:"IBM Plex Mono",monospace; color:var(--ink); font-weight:600}
+.gline .gdir{font-size:11px; color:var(--faint)}
+
+/* ---- footer ---- */
+footer{margin-top:48px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+footer h3{font-family:"Archivo"; font-size:15px; font-weight:700; color:var(--ink); margin-bottom:10px}
+footer p{margin:0 0 10px; max-width:82ch}
+footer code{font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--surface-2);
+  padding:1px 6px; border-radius:5px; color:var(--ink)}
+.snapnote{display:inline-flex; align-items:center; gap:8px; background:var(--surface-2);
+  border:1px solid var(--line); border-radius:20px; padding:5px 14px; font-family:"IBM Plex Mono",monospace;
+  font-size:12px; color:var(--muted); margin-top:4px}
+.snapnote b{color:var(--gold); font-weight:600}
+@media(max-width:720px){
+  .compare{grid-template-columns:1fr}
+  .crow{grid-template-columns:84px 1fr 78px} .crow .cn{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Evolutionary Tournament · Generation <span id="gen"></span></div>
+      <h1>Evolution&nbsp;Arena</h1>
+      <p class="sub">Twenty bots trading 10 crypto coins 24/7 across seven strategy shapes — momentum,
+        reversion, breakout, MA-cross, RSI, volatility, and a regime switcher that picks one of the
+        others by market weather — on one Alpaca account. Selection keeps the risk-adjusted winners
+        each week and breeds them into the losers.</p>
+    </div>
+    <div class="clock">
+      <div class="lab">Next evolution · Mon 8am MT</div>
+      <div class="big" id="countdown">—</div>
+      <div class="meta" id="genstamp"></div>
+    </div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <div class="head"><h2>Family Duel</h2><span class="note">how the strategy shapes stack up</span></div>
+    <div class="duel" id="duel"></div>
+  </section>
+
+  <section>
+    <div class="head"><h2>By Coin</h2><span class="note">where capital is deployed right now · open positions</span></div>
+    <div class="coins" id="coins"></div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Standings</h2><span class="note">ranked by fitness — recent-window, risk-adjusted</span></div>
+    <div class="panel tablescroll">
+      <table>
+        <thead><tr>
+          <th class="l">#</th><th class="l">Bot</th><th class="l">Family</th>
+          <th>Deployed</th><th>P/L this strategy</th><th>ROI (wk)</th><th>Fitness</th><th class="l">Status</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><h2>Profit &amp; Loss</h2><span class="note">gain/loss under each bot's current strategy · colored by family</span></div>
+    <div class="panel chart" id="chart"></div>
+  </section>
+
+  <section>
+    <div class="head"><h2>What the Field Is Telling Us</h2><span class="note">auto-derived from this snapshot</span></div>
+    <div class="cards" id="insights"></div>
+  </section>
+
+  <footer>
+    <h3>How fitness works</h3>
+    <p>Each bot is scored on a <b>Sortino-style ratio over its continuous equity curve</b> (cash + realized +
+      unrealized) since its current genome was assigned — so a smooth climb beats a bumpy one with the same
+      endpoint, and realizing a gain never reads as a drawdown. Two guards sink non-competitors below every real
+      player: a bot that never traded (<span class="pill idle">idle</span>) or deploys under
+      <code id="minutil"></code> of the risk cap (<span class="pill low">low-deploy</span>) can't fake-win by
+      sitting in cash. Fitness is EMA-smoothed across generations so one lucky week can't flip elite status.</p>
+    <p><b>Everything here is current-strategy only.</b> "P/L this strategy" is <em>equity − base</em> since the
+      bot's current genome was assigned, and fitness is that same window's risk-adjusted path. Cumulative
+      "since $100k" P/L is deliberately not shown — it's polluted by earlier genomes that were culled and no
+      longer exist, so it can't evaluate the strategy running now. The window resets at each evolution, so right
+      after one these numbers start near zero and build over the week — that week-over-week gain is the real score.</p>
+    <div class="snapnote">Snapshot as of <b id="asof"></b> · the local <code>dashboard.html</code> auto-refreshes live; this page redeploys on request</div>
+  </footer>
+</div>
+
+<script>
+const DATA = {
+  "generated_at": "2026-09-19T17:53:18Z",
+  "generation": 1,
+  "fleet": {
+    "deployed": 493896,
+    "in_market": 18,
+    "pl": 52182,
+    "n": 20,
+    "green": 19
+  },
+  "activity": {
+    "fills_24h": 79,
+    "entries_24h": 86,
+    "exits_24h": 22
+  },
+  "coins": {
+    "AAVE/USD": {
+      "holders": 4,
+      "notional": 37449,
+      "upnl": 2100,
+      "realized": 3533
+    },
+    "DOGE/USD": {
+      "holders": 5,
+      "notional": 42455,
+      "upnl": 965,
+      "realized": 691
+    },
+    "LTC/USD": {
+      "holders": 7,
+      "notional": 53306,
+      "upnl": 2077,
+      "realized": 1044
+    },
+    "UNI/USD": {
+      "holders": 6,
+      "notional": 45951,
+      "upnl": -1907,
+      "realized": 18068
+    },
+    "ETH/USD": {
+      "holders": 9,
+      "notional": 54490,
+      "upnl": 1375,
+      "realized": 1005
+    },
+    "BTC/USD": {
+      "holders": 10,
+      "notional": 65786,
+      "upnl": 1282,
+      "realized": 1087
+    },
+    "LINK/USD": {
+      "holders": 6,
+      "notional": 45922,
+      "upnl": 1166,
+      "realized": 2746
+    },
+    "DOT/USD": {
+      "holders": 9,
+      "notional": 75584,
+      "upnl": 2566,
+      "realized": 2220
+    },
+    "SOL/USD": {
+      "holders": 9,
+      "notional": 57584,
+      "upnl": 2374,
+      "realized": 5168
+    },
+    "AVAX/USD": {
+      "holders": 2,
+      "notional": 15370,
+      "upnl": 1019,
+      "realized": 7932
+    }
+  },
+  "evolution": {
+    "next_in_hours": 44.112,
+    "min_utilization": 0.15,
+    "keep_fraction": 0.4
+  },
+  "families": {
+    "momentum": {
+      "count": 4,
+      "avg_pl": 4222,
+      "total_pl": 16890,
+      "avg_capital": 30809,
+      "in_top10": 3,
+      "best": "Charmander",
+      "worst": "Beldum"
+    },
+    "reversion": {
+      "count": 3,
+      "avg_pl": 810,
+      "total_pl": 2431,
+      "avg_capital": 18688,
+      "in_top10": 1,
+      "best": "Froakie",
+      "worst": "Duskull"
+    },
+    "breakout": {
+      "count": 3,
+      "avg_pl": 2374,
+      "total_pl": 7123,
+      "avg_capital": 19589,
+      "in_top10": 1,
+      "best": "Rolycoly",
+      "worst": "Bulbasaur"
+    },
+    "ma_cross": {
+      "count": 3,
+      "avg_pl": 2183,
+      "total_pl": 6550,
+      "avg_capital": 21427,
+      "in_top10": 1,
+      "best": "Larvitar",
+      "worst": "Bagon"
+    },
+    "rsi": {
+      "count": 2,
+      "avg_pl": 204,
+      "total_pl": 408,
+      "avg_capital": 8805,
+      "in_top10": 0,
+      "best": "Trapinch",
+      "worst": "Dratini"
+    },
+    "volatility": {
+      "count": 3,
+      "avg_pl": 3029,
+      "total_pl": 9086,
+      "avg_capital": 23336,
+      "in_top10": 3,
+      "best": "Tinkatink",
+      "worst": "Applin"
+    },
+    "regime": {
+      "count": 2,
+      "avg_pl": 4847,
+      "total_pl": 9694,
+      "avg_capital": 39128,
+      "in_top10": 1,
+      "best": "Magby",
+      "worst": "Cyndaquil"
+    }
+  },
+  "rows": [
+    {
+      "n": "Igglybuff",
+      "f": "volatility",
+      "dep": 22445,
+      "slots": "4/4",
+      "plw": 3177,
+      "roi": 0.166,
+      "fit": 0.094,
+      "cap": 19172,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Applin",
+      "f": "volatility",
+      "dep": 18305,
+      "slots": "4/4",
+      "plw": 1974,
+      "roi": 0.12,
+      "fit": 0.093,
+      "cap": 16401,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Froakie",
+      "f": "reversion",
+      "dep": 0,
+      "slots": "0/4",
+      "plw": 2009,
+      "roi": 0.055,
+      "fit": 0.09,
+      "cap": 36477,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Tinkatink",
+      "f": "volatility",
+      "dep": 37987,
+      "slots": "4/4",
+      "plw": 3935,
+      "roi": 0.114,
+      "fit": 0.088,
+      "cap": 34435,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Magby",
+      "f": "regime",
+      "dep": 42548,
+      "slots": "4/4",
+      "plw": 5337,
+      "roi": 0.147,
+      "fit": 0.085,
+      "cap": 36418,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Pidgey",
+      "f": "momentum",
+      "dep": 39512,
+      "slots": "4/4",
+      "plw": 5591,
+      "roi": 0.161,
+      "fit": 0.076,
+      "cap": 34788,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Rolycoly",
+      "f": "breakout",
+      "dep": 25201,
+      "slots": "4/4",
+      "plw": 3877,
+      "roi": 0.19,
+      "fit": 0.072,
+      "cap": 20364,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Larvitar",
+      "f": "ma_cross",
+      "dep": 33598,
+      "slots": "4/4",
+      "plw": 3827,
+      "roi": 0.118,
+      "fit": 0.06,
+      "cap": 32502,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Charmander",
+      "f": "momentum",
+      "dep": 46064,
+      "slots": "4/4",
+      "plw": 5658,
+      "roi": 0.141,
+      "fit": 0.056,
+      "cap": 39991,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Elekid",
+      "f": "momentum",
+      "dep": 38844,
+      "slots": "4/4",
+      "plw": 3403,
+      "roi": 0.111,
+      "fit": 0.054,
+      "cap": 30751,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Bagon",
+      "f": "ma_cross",
+      "dep": 16258,
+      "slots": "4/4",
+      "plw": 1264,
+      "roi": 0.086,
+      "fit": 0.053,
+      "cap": 14670,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Cyndaquil",
+      "f": "regime",
+      "dep": 43344,
+      "slots": "4/4",
+      "plw": 4357,
+      "roi": 0.104,
+      "fit": 0.053,
+      "cap": 41838,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Gastly",
+      "f": "ma_cross",
+      "dep": 18972,
+      "slots": "4/4",
+      "plw": 1459,
+      "roi": 0.085,
+      "fit": 0.05,
+      "cap": 17110,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Honedge",
+      "f": "breakout",
+      "dep": 23203,
+      "slots": "4/4",
+      "plw": 1816,
+      "roi": 0.082,
+      "fit": 0.047,
+      "cap": 22232,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Beldum",
+      "f": "momentum",
+      "dep": 25251,
+      "slots": "4/4",
+      "plw": 2238,
+      "roi": 0.126,
+      "fit": 0.046,
+      "cap": 17707,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Bulbasaur",
+      "f": "breakout",
+      "dep": 21036,
+      "slots": "4/4",
+      "plw": 1430,
+      "roi": 0.088,
+      "fit": 0.035,
+      "cap": 16171,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Dratini",
+      "f": "rsi",
+      "dep": 0,
+      "slots": "0/4",
+      "plw": 52,
+      "roi": 0.005,
+      "fit": 0.004,
+      "cap": 9485,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Duskull",
+      "f": "reversion",
+      "dep": 30694,
+      "slots": "4/4",
+      "plw": -164,
+      "roi": -0.012,
+      "fit": -0.004,
+      "cap": 13183,
+      "tr": 1,
+      "uo": 1,
+      "st": 0
+    },
+    {
+      "n": "Squirtle",
+      "f": "reversion",
+      "dep": 6506,
+      "slots": "2/5",
+      "plw": 586,
+      "roi": 0.092,
+      "fit": -100000000.0,
+      "cap": 6404,
+      "tr": 1,
+      "uo": 0,
+      "st": 0
+    },
+    {
+      "n": "Trapinch",
+      "f": "rsi",
+      "dep": 4128,
+      "slots": "1/4",
+      "plw": 356,
+      "roi": 0.044,
+      "fit": -100000000.0,
+      "cap": 8125,
+      "tr": 1,
+      "uo": 0,
+      "st": 0
+    }
+  ],
+  "genes": {
+    "momentum": {
+      "momentum_threshold": {
+        "top": 0.029,
+        "bottom": 0.0397
+      },
+      "take_profit_pct": {
+        "top": 0.1321,
+        "bottom": 0.1804
+      },
+      "stop_loss_pct": {
+        "top": -0.0707,
+        "bottom": -0.1719
+      },
+      "trail_arm_pct": {
+        "top": 0.0504,
+        "bottom": 0.0682
+      },
+      "trail_pct": {
+        "top": 0.0391,
+        "bottom": 0.0266
+      },
+      "max_hold_hours": {
+        "top": 83.0,
+        "bottom": 48.0
+      },
+      "reentry_cooldown_hours": {
+        "top": 6.0,
+        "bottom": 4.5
+      },
+      "target_position_usd": {
+        "top": 10740.7638,
+        "bottom": 8088.5978
+      }
+    },
+    "reversion": {},
+    "breakout": {},
+    "ma_cross": {},
+    "rsi": {},
+    "volatility": {},
+    "pullback": {},
+    "regime": {}
+  }
+};
+
+const FAM={
+  momentum:{c:"var(--momentum)",label:"Momentum",cls:"mom"},
+  credit_spread:{c:"var(--credit)",label:"Credit spread",cls:"cred"},
+  reversion:{c:"var(--reversion)",label:"Reversion",cls:"rev"},
+  iron_condor:{c:"var(--condor)",label:"Iron condor",cls:"ic"},
+  straddle:{c:"var(--straddle)",label:"Straddle",cls:"str"},
+  breakout:{c:"var(--breakout)",label:"Breakout",cls:"brk"},
+  ma_cross:{c:"var(--ma_cross)",label:"MA cross",cls:"mac"},
+  rsi:{c:"var(--rsi)",label:"RSI",cls:"rsi"},
+  volatility:{c:"var(--volatility)",label:"Volatility",cls:"vol"},
+  regime:{c:"var(--regime)",label:"Regime switcher",cls:"reg"}
+};
+const fam=k=>FAM[k]||{c:"var(--faint)",label:k,cls:""};
+const usd=(v,d=0)=>(v<0?"-$":"$")+Math.abs(v).toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:d});
+const signed=(v,d=0)=>(v>=0?"+":"")+usd(v,d).replace("$",v<0?"$":"$");
+const plStr=v=>(v>=0?"+$":"−$")+Math.abs(v).toLocaleString("en-US",{maximumFractionDigits:0});
+const pct=(v,d=1)=>(v>=0?"+":"")+(v*100).toFixed(d)+"%";
+const gated=r=>r.fit<=-1e7;
+
+/* ---------- header ---------- */
+document.getElementById("gen").textContent=DATA.generation;
+document.getElementById("asof").textContent=new Date(DATA.generated_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+document.getElementById("genstamp").textContent="gen "+DATA.generation+" · "+DATA.rows.length+" bots";
+document.getElementById("minutil").textContent=(DATA.evolution.min_utilization*100)+"%";
+
+const target=new Date(DATA.generated_at).getTime()+DATA.evolution.next_in_hours*3600e3;
+function tick(){
+  let ms=target-Date.now(), el=document.getElementById("countdown");
+  if(ms<=0){el.textContent="due now";return;}
+  const d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),m=Math.floor(ms%36e5/6e4);
+  el.textContent=(d>0?d+"d ":"")+h+"h "+m+"m";
+}
+tick(); setInterval(tick,30000);
+
+/* ---------- kpis ---------- */
+const f=DATA.fleet;
+const act=DATA.activity||{fills_24h:0,entries_24h:0,exits_24h:0};
+const kpis=[
+  {k:"Deployed",v:usd(f.deployed),d:f.in_market+"/"+DATA.rows.length+" bots in the market",hero:1},
+  {k:"P/L this cycle",v:plStr(f.pl),d:f.green+"/"+f.n+" green under current strategy",cls:f.pl>=0?"pos":"neg"},
+  {k:"Trades (24h)",v:act.fills_24h,d:act.entries_24h+" buys · "+act.exits_24h+" sells"},
+  {k:"Leader",v:DATA.rows[0].n.replace(/\^\d/,""),d:"fitness "+DATA.rows[0].fit.toFixed(2)},
+  {k:"Best P/L",v:bestPL().n,d:plStr(bestPL().plw)+" this strategy"},
+  {k:"Generation",v:DATA.generation,d:Math.round(DATA.evolution.keep_fraction*DATA.rows.length)+" kept per cull"}
+];
+function bestPL(){return DATA.rows.reduce((a,b)=>(b.plw??-1e18)>(a.plw??-1e18)?b:a);}
+const plMax=Math.max(1,...DATA.rows.map(r=>Math.abs(r.plw||0)));
+document.getElementById("kpis").innerHTML=kpis.map(x=>`
+  <div class="kpi ${x.hero?'hero':''}">${x.hero?'<div class="rail"></div>':''}
+    <div class="k">${x.k}</div>
+    <div class="v ${x.cls||''}">${x.v}</div>
+    <div class="d">${x.d}</div>
+  </div>`).join("");
+
+/* ---------- family duel ---------- */
+function team(key){
+  const t=DATA.families[key], m=fam(key);
+  return `<div class="team ${m.cls}" style="--tc:${m.c}">
+    <div class="name"><span class="dot"></span>${m.label}</div>
+    <div class="tag">${t.count} bots · best ${t.best} · worst ${t.worst}</div>
+    <div class="grid">
+      <div class="cell"><div class="cl">Avg P/L</div><div class="cv neg">${plStr(t.avg_pl)}</div></div>
+      <div class="cell"><div class="cl">In top 10</div><div class="cv">${t.in_top10}<span style="color:var(--faint)">/10</span></div></div>
+      <div class="cell"><div class="cl">Avg deployed</div><div class="cv">${usd(t.avg_capital)}</div></div>
+      <div class="cell"><div class="cl">Total P/L</div><div class="cv neg">${plStr(t.total_pl)}</div></div>
+    </div>
+  </div>`;
+}
+const famKeys=Object.keys(DATA.families);
+const dmax=Math.max(1,...famKeys.map(k=>Math.abs(DATA.families[k].avg_pl||0)));
+const capmax=Math.max(1,...famKeys.map(k=>DATA.families[k].avg_capital||0));
+const compareBars=(pick,scale)=>famKeys.map(k=>{
+  const v=pick(DATA.families[k]);
+  return `<div class="track" style="margin-top:6px" title="${fam(k).label}">
+    <i style="width:${Math.abs(v)/scale*100}%;background:${fam(k).c}"></i></div>`;
+}).join("");
+document.getElementById("duel").innerHTML=
+  `<div class="teams">${famKeys.map(team).join("")}</div>
+   <div class="compare">
+     <div class="duelbar"><div class="lab"><span>Avg loss per bot (shorter = better)</span></div>
+       ${compareBars(t=>t.avg_pl||0, dmax)}</div>
+     <div class="duelbar"><div class="lab"><span>Avg capital deployed (longer = competing)</span></div>
+       ${compareBars(t=>t.avg_capital||0, capmax)}</div>
+   </div>`;
+const cCap=(DATA.families.credit_spread||{}).avg_capital||0, mCap=(DATA.families.momentum||{}).avg_capital||0;
+
+/* ---------- by-coin ---------- */
+const coinEntries=Object.entries(DATA.coins||{}).sort((a,b)=>(b[1].notional||0)-(a[1].notional||0));
+document.getElementById("coins").innerHTML = coinEntries.length ? coinEntries.map(([sym,c])=>`
+  <div class="coincard">
+    <div class="sym">${sym.replace("/USD","")}</div>
+    <div class="crow"><span>bots in</span><b>${c.holders}</b></div>
+    <div class="crow"><span>deployed</span><b>${usd(c.notional)}</b></div>
+    <div class="crow"><span>unrealized</span><b class="${(c.upnl||0)>=0?'pos':'neg'}">${plStr(c.upnl||0)}</b></div>
+    <div class="crow"><span>realized</span><b class="${(c.realized||0)>=0?'pos':'neg'}">${plStr(c.realized||0)}</b></div>
+  </div>`).join("") : `<div class="coincard"><div class="empty">No open positions right now — bots are in cash, waiting for a signal.</div></div>`;
+
+/* ---------- standings ---------- */
+document.getElementById("rows").innerHTML=DATA.rows.map((r,i)=>{
+  const m=fam(r.f);
+  let status;
+  if(!r.tr) status=`<span class="pill idle">idle</span>`;
+  else if(!r.uo) status=`<span class="pill low">low-deploy</span>`;
+  else if(i===0) status=`<span class="pill lead">leader</span>`;
+  else status=`<span style="color:var(--faint);font-family:'IBM Plex Mono';font-size:12px">${r.st>0?'stage '+r.st:'—'}</span>`;
+  const fitCell = gated(r)
+    ? `<span style="color:var(--faint)">gated</span>`
+    : `<span class="${r.fit>=0?'pos':'neg'}">${r.fit.toFixed(2)}</span>`;
+  const mag=Math.min(Math.abs(r.plw||0)/plMax,1);
+  return `<tr>
+    <td class="l rank ${i===0?'top':''}">${i+1}</td>
+    <td class="l"><span class="bot">${r.n.replace(/\^(\d)/,'')}${r.st>0?` <span class="stage">▲${r.st}</span>`:''}</span></td>
+    <td class="l"><span class="chip ${m.cls}">${m.label}</span></td>
+    <td class="num">${r.dep>0?usd(r.dep):'<span style="color:var(--faint)">—</span>'} <span style="color:var(--faint);font-family:'IBM Plex Mono';font-size:11px">${r.slots}</span></td>
+    <td class="num"><span class="plbar-wrap"><span class="${(r.plw||0)>=0?'pos':'neg'}">${plStr(r.plw||0)}</span>
+      <span class="plbar"><i style="${(r.plw||0)<0?`right:50%;width:${mag*50}%;background:var(--neg)`:`left:50%;width:${mag*50}%;background:var(--pos)`}"></i></span></span></td>
+    <td class="num ${r.roi>=0?'pos':'neg'}">${pct(r.roi)}</td>
+    <td class="num">${fitCell}</td>
+    <td class="l">${status}</td>
+  </tr>`;
+}).join("");
+
+/* ---------- pl chart ---------- */
+const sorted=[...DATA.rows].sort((a,b)=>(a.plw||0)-(b.plw||0));
+const maxAbs=Math.max(1,...sorted.map(r=>Math.abs(r.plw||0)));
+document.getElementById("chart").innerHTML=sorted.map(r=>{
+  const m=fam(r.f), w=Math.abs(r.plw||0)/maxAbs*50, p=(r.plw||0);
+  const bar=p<0?`right:50%;width:${w}%;background:${m.c}`:`left:50%;width:${w}%;background:${m.c}`;
+  return `<div class="crow">
+    <div class="cn">${r.n.replace(/\^\d/,'')}</div>
+    <div class="cbar"><div class="zero"></div><i style="${bar};opacity:.9"></i></div>
+    <div class="cv ${p>=0?'pos':'neg'}">${plStr(p)}</div>
+  </div>`;
+}).join("")+`<div class="axis"><span></span><span>← losing · $0 · gaining →</span><span></span></div>`;
+
+/* ---------- insights ---------- */
+const GENE={
+  momentum_threshold:{hi:"wait for a bigger move",lo:"act on a smaller move",fmt:v=>(v*100).toFixed(2)+"%"},
+  rsi_buy:{hi:"buy less oversold",lo:"wait for deeper oversold",fmt:v=>v.toFixed(0)},
+  vol_ratio_min:{hi:"demand a bigger vol spike",lo:"trigger on a smaller vol spike",fmt:v=>v.toFixed(2)+"×"},
+  take_profit_pct:{hi:"let winners run",lo:"bank winners early",fmt:v=>(v*100).toFixed(1)+"%"},
+  stop_loss_pct:{hi:"cut losers tighter",lo:"give losers more room",fmt:v=>(v*100).toFixed(1)+"%"},
+  target_position_usd:{hi:"bigger positions",lo:"smaller positions",fmt:v=>"$"+v.toFixed(0)}
+};
+function geneLines(fam){
+  const g=DATA.genes[fam];
+  return Object.entries(g).map(([k,v])=>{
+    const meta=GENE[k]||{hi:"higher",lo:"lower",fmt:x=>x};
+    const higher=v.top>v.bottom;
+    return {k,dir:higher?meta.hi:meta.lo,top:meta.fmt(v.top),bot:meta.fmt(v.bottom),
+      name:k.replace(/_/g," ").replace(" pct","").replace(" usd","")};
+  });
+}
+function gg(fam){
+  return `<div class="gg">`+geneLines(fam).map(l=>`
+    <div class="gline"><span class="gname">${l.name} — <span class="gdir">${l.dir}</span></span>
+    <span class="gval">${l.top} <span style="color:var(--faint)">vs ${l.bot}</span></span></div>`).join("")+`</div>`;
+}
+const lowdep=DATA.rows.filter(r=>r.tr&&!r.uo), idle=DATA.rows.filter(r=>!r.tr);
+const famBy=(sel)=>famKeys.reduce((a,k)=>(a===null||sel(DATA.families[k])>sel(DATA.families[a]))?k:a,null);
+const bestFam=famBy(t=>t.avg_pl??-1e18);        // least-bad average P/L
+const deployFam=famBy(t=>t.avg_capital??-1);    // most capital at risk
+const worst=DATA.rows.reduce((a,b)=>(b.plw??0)<(a.plw??0)?b:a);
+const bare=s=>s.replace(/\^\d/,"");
+const leaderName=bare(DATA.rows[0].n), worstName=bare(worst.n);
+const nFam=k=>(DATA.families[k]||{}).count||0;
+const insights=[];
+if(DATA.families[bestFam]) insights.push({ic:"Family lead",ac:fam(bestFam).c,
+  h:`${fam(bestFam).label} is holding up best`,
+  p:`Of the shapes in play, <span class="hl">${fam(bestFam).label.toLowerCase()}</span> bots have the least-bad
+  average at <span class="hl">${plStr(DATA.families[bestFam].avg_pl)}</span> per bot and hold
+  <span class="hl">${DATA.families[bestFam].in_top10}</span> of the top 10.`});
+insights.push({ic:"Deployment",ac:"var(--gold)",h:"Fitness rewards showing up",
+  p:`<span class="hl">${fam(deployFam).label}</span> bots put the most capital at risk on average
+  (<span class="hl">${usd((DATA.families[deployFam]||{}).avg_capital||0)}</span>). The utilization guard sank
+  <span class="hl">${lowdep.length}</span> low-deployer${lowdep.length===1?'':'s'} and
+  <span class="hl">${idle.length}</span> idle bot${idle.length===1?'':'s'} below every real competitor —
+  no fake-winning by hoarding cash.`});
+for(const k of famKeys){
+  if(DATA.families[k] && Object.keys(DATA.genes[k]||{}).length)
+    insights.push({ic:`Gene signal · ${fam(k).label.toLowerCase()}`,ac:fam(k).c,
+      h:`What the ${fam(k).label.toLowerCase()} winners do differently`,
+      p:`Top-half vs bottom-half genomes (${nFam(k)} bots):`,g:k});
+}
+insights.push({ic:"Worst drawdown",ac:"var(--neg)",h:`${worstName} is the cautionary tale`,
+  p:`Down <span class="hl">${plStr(worst.plw||0)}</span> under its current strategy${worst.cap?` on
+  <span class="hl">${usd(worst.cap)}</span> of deployed capital`:""} — it resets to a fresh genome at the next cull.`});
+insights.push({ic:"System",ac:"var(--gold)",h:"Fitness rides the equity curve",
+  p:`Ranking uses a Sortino ratio on the continuous account-equity curve, so realizing a gain no longer reads as a
+  drawdown — the board is ordered by recent risk-adjusted path, not cumulative P/L, which is why
+  <span class="hl">${leaderName}</span> tops it.`});
+document.getElementById("insights").innerHTML=insights.map(c=>`
+  <div class="card" style="--ac:${c.ac}">
+    <div class="ic">${c.ic}</div>
+    <h3>${c.h}</h3>
+    <p>${c.p}</p>
+    ${c.g?gg(c.g):""}
+  </div>`).join("");
+</script>
